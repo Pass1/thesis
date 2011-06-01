@@ -1,2 +1,3 @@
 *.o
 *.ex
+post_processing/bin
