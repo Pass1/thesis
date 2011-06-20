@@ -1,3 +1,4 @@
 *.o
 *.ex
+*.swp
 post_processing/bin

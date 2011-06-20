@@ -1,6 +1,16 @@
 #include <math.h>
 #include <stdio.h>
 
+void printusage(int argc, char *argv[], double min_x, double max_x, double min_y, double max_y, double min_z, double max_z, double n_pickpoints_x, double n_pickpoints_y, double n_pickpoints_z){
+	printf ("You specified %i arguments, when we are expecting 0 (for the defauls) or 9.\n"
+		"Usage: %s [min_x max_x min_y max_y min_z max_z n_pickpoints_x n_pickpoints_y n_pickpoints_z]\n\n"
+		"min_[x,y,z] is the minimum value for the particular dimension. For the z value this is the deepest point.\n"
+		"max_[x,y,z] is the maximum value for the particular dimension. For the z value this is the point closest to the surface.\n"
+		"n_pickpoints_[x,y,z] is the number of pickpoints for the particular dimension.\n\n"
+		"Using defaults is equal to:\n"
+		"%s %g %g %g %g %g %g %g %g %g\n",
+		argc-1, argv[0], argv[0], min_x, max_x, min_y, max_y, min_z, max_z, n_pickpoints_x, n_pickpoints_y, n_pickpoints_z);
+}
 
 int main(int argc, char *argv[]){
 	double min_x = -16000.;
@@ -11,8 +21,35 @@ int main(int argc, char *argv[]){
 	double max_z = -0.;
 	
 	int n_points_x = 126;
-	int n_points_y = 126;
+	int n_points_y = 125;
 	int n_points_z = 1;
+
+	//printf("Arguments specified:: %i\n", argc-1);
+	if (argc > 1) {
+		if (argc-1 != 9) {
+			printusage(argc, argv, min_x, max_x, min_y, max_y, min_z, max_z, n_points_x, n_points_y, n_points_z);
+			return(1);
+		}
+		if (argc-1 == 9) {
+			//printf("Reading arguments from command line.\n");
+			min_x = atoi(argv[1]);
+			max_x = atoi(argv[2]);
+			min_y = atoi(argv[3]);
+			max_y = atoi(argv[4]);
+			min_z = atoi(argv[5]);
+			max_z = atoi(argv[6]);
+			n_points_x = atoi(argv[7]);
+			n_points_y = atoi(argv[8]);
+			n_points_z = atoi(argv[9]);
+		}
+	}
+
+	if (min_z > max_z) {
+		printf ("max_z (%g) must be >= min_z (%g).\nExiting.\n", max_z, min_z);
+		return 1;
+	}
+	
+	return 1;
 
 	double delta_x = max_x - min_x;
 	double delta_y = max_y - min_y;
