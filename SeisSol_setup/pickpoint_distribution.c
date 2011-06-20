@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdio.h>
+#define MAX_PICKPOINTS 20000
 
 void printusage(int argc, char *argv[], double min_x, double max_x, double min_y, double max_y, double min_z, double max_z, double n_pickpoints_x, double n_pickpoints_y, double n_pickpoints_z){
 	printf ("You specified %i arguments, when we are expecting 0 (for the defauls) or 9.\n"
@@ -13,16 +14,16 @@ void printusage(int argc, char *argv[], double min_x, double max_x, double min_y
 }
 
 int main(int argc, char *argv[]){
-	double min_x = -16000.;
-	double max_x = 2000.;
-	double min_y = -16000.;
-	double max_y = 2000.;
-	double min_z = -0.;
-	double max_z = -0.;
+	double min_x = -10000.;
+	double max_x = 10000.;
+	double min_y = -5000.;
+	double max_y = 5000.;
+	double min_z = -10000.;
+	double max_z = 0.;
 	
-	int n_points_x = 126;
-	int n_points_y = 125;
-	int n_points_z = 1;
+	int n_points_x = 25;
+	int n_points_y = 25;
+	int n_points_z = 25;
 
 	//printf("Arguments specified:: %i\n", argc-1);
 	if (argc > 1) {
@@ -44,12 +45,30 @@ int main(int argc, char *argv[]){
 		}
 	}
 
+	//Handle error cases
 	if (min_z > max_z) {
 		printf ("max_z (%g) must be >= min_z (%g).\nExiting.\n", max_z, min_z);
 		return 1;
 	}
+	if (min_x > max_x) {
+		printf ("max_x (%g) must be >= min_x (%g).\nExiting.\n", max_x, min_x);
+		return 1;
+	}
+	if (min_y > max_y) {
+		printf ("max_y (%g) must be >= min_y (%g).\nExiting.\n", max_y, min_y);
+		return 1;
+	}
 	
-	return 1;
+	if (n_points_x * n_points_y * n_points_z > MAX_PICKPOINTS) {
+		printf("SeisSol supports maximum %i. You specified %g.\nExiting.\n", MAX_PICKPOINTS, n_points_x * n_points_y * n_points_z);
+		return 1;
+	}
+	
+	if (n_points_x < 1 | n_points_y < 1 | n_points_z < 1){
+		printf("n_pickpoints_[x,y,z] must be > 0.\nExiting.\n");
+		return 1;
+	}
+	//end of handling error cases.
 
 	double delta_x = max_x - min_x;
 	double delta_y = max_y - min_y;
