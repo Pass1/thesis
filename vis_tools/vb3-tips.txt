@@ -1,0 +1,23 @@
+Since it is not possible to play a single 41MP movie on the AESOP display due to bandwidth issues, we split it up into one for each display. At this point we need a program that synchronises the play/pause actions across all the nodes and screens. For this purpose we use VB.3
+
+First we need to define the CGLX default configuration so VB.2 knows the nodes, the screens on the nodes, the screens' details, ip addresses and port numbers required for playback. In this case we are using the AESOP display (zone 2 hence the usage of z2-csdefault.xml).
+
+export CGLX_DEFAULT_CONF=/opt/kaust/config/cglx/z2-csdefault.xml
+
+Now we launch VB.3 telling it that it will be displaying on 4 rows, and the folder containing the movies named in column, row order.
+For example, we can name the files with the following format:
+
+screen_<column>_<row>.avi
+
+Here is an example used in the thesis demo:
+
+screen_000_000.avi  screen_002_000.avi  screen_004_000.avi  screen_006_000.avi  screen_008_000.avi
+screen_000_001.avi  screen_002_001.avi  screen_004_001.avi  screen_006_001.avi  screen_008_001.avi
+screen_000_002.avi  screen_002_002.avi  screen_004_002.avi  screen_006_002.avi  screen_008_002.avi
+screen_000_003.avi  screen_002_003.avi  screen_004_003.avi  screen_006_003.avi  screen_008_003.avi
+screen_001_000.avi  screen_003_000.avi  screen_005_000.avi  screen_007_000.avi  screen_009_000.avi
+screen_001_001.avi  screen_003_001.avi  screen_005_001.avi  screen_007_001.avi  screen_009_001.avi
+screen_001_002.avi  screen_003_002.avi  screen_005_002.avi  screen_007_002.avi  screen_009_002.avi
+screen_001_003.avi  screen_003_003.avi  screen_005_003.avi  screen_007_003.avi  screen_009_003.avi
+
+/usr/local/cglX/bin/csastart /home/demo/VB3.3 --rows 4 /path/to/folder/with/movies
