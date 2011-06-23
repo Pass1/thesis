@@ -21,3 +21,7 @@ screen_001_002.avi  screen_003_002.avi  screen_005_002.avi  screen_007_002.avi  
 screen_001_003.avi  screen_003_003.avi  screen_005_003.avi  screen_007_003.avi  screen_009_003.avi
 
 /usr/local/cglX/bin/csastart /home/demo/VB3.3 --rows 4 /path/to/folder/with/movies
+
+in /projects/kaust/passone/movie/movie/screens run
+
+for i in $(cat screens.txt); do /opt/cglx/bin/ffmpeg -r 15 -i ./frame%04d_$i.png -qscale 1 avi/screen_$i.avi; done
