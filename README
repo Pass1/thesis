@@ -10,4 +10,9 @@ SeisSol_setup:
 Contains a tool used to create a pickpoints list given the size of the domain and the number of pickpoints; this is then added to SeisSol's PARAMETERS.PAR file to set up the simulation.
 
 Matlab:
+The subfolder "checks" contains matlab scripts used to check for simmetry in the point strike slip scenario and the neu to metis converter.
+
+Post-processing:
+Contains the scripts required to convert from the pickpoint format into VTK (for VisIt) and AmiraMesh (for Avizo).
+
 

@@ -1,0 +1,14 @@
+To convert the frames into a movie playabale in the visualization labs, the following command should be used:
+
+/opt/cglx/bin/ffmpeg -r <fps> -i <input_frame_list> -qscale 1 <output_file_name>
+
+where
+
+<fps> is the framerate required.
+<input_frame_lis> the frame names
+<output_file_name> the name of the movie we are creating.
+
+Example:
+/opt/cglx/bin/ffmpeg -r 15 -i screens/frame%04d.png -qscale 1 ./movie.avi
+
+Will create a movie named movie.avi at 15fps from the files contained in the folder screens named frame0000.png, frame0001.png, etc.
