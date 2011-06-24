@@ -1,0 +1,13 @@
+This project contains the scripts to facilitate:
+	- the setup of a simulation using SeisSol
+	- postprocess the data
+	- postprocess the frames created via a visualization tool (e.g. VisIt, Avizo)
+	- sanity checks
+
+A description of the folders follows.
+
+SeisSol_setup:
+Contains a tool used to create a pickpoints list given the size of the domain and the number of pickpoints; this is then added to SeisSol's PARAMETERS.PAR file to set up the simulation.
+
+Matlab:
+
