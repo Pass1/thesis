@@ -1,7 +1,7 @@
 This project contains the scripts to facilitate:
 	- the setup of a simulation using SeisSol
 	- postprocess the data
-	- postprocess the frames created via a visualization tool (e.g. VisIt, Avizo)
+	- postprocess the frames created via a visualisation tool (e.g. VisIt, Avizo)
 	- sanity checks
 
 A description of the folders follows.
@@ -10,9 +10,13 @@ SeisSol_setup:
 Contains a tool used to create a pickpoints list given the size of the domain and the number of pickpoints; this is then added to SeisSol's PARAMETERS.PAR file to set up the simulation.
 
 Matlab:
-The subfolder "checks" contains matlab scripts used to check for simmetry in the point strike slip scenario and the neu to metis converter.
+The subfolder "checks" contains matlab scripts used to check for symmetry in the point strike slip scenario and the neu to metis converter.
 
 Post-processing:
 Contains the scripts required to convert from the pickpoint format into VTK (for VisIt) and AmiraMesh (for Avizo).
 
-
+Vis_Tools:
+Contains scripts to:
+	- interlace frames for 3D rendering
+	- cut a series of frames 13600x3072 into 1360x768 subframes for z2 (AESOP display)
+Plus it also contains a sample attributes.xml file to be loaded in VisIt with symmetrical Gaussian distribution and two guides: one on how to use VB.3 (to synchronise the playback of the multiple movies on the AESOP) and ffmpeg.
