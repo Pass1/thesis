@@ -1,23 +1,24 @@
+#ifdef PAR
 #include <mpi.h>
+#ifdef
 #include "visit_writer.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/types.h>
-#define NX 25
-#define NY 25
-#define NZ 25
 
 int main(int argc, char *argv[]){
-	int rank,size;
+	int rank = 0;
+#ifdef PAR
+	int size;
 	double start_time, end_time;
 	/* record start time */
 	start_time = MPI_Wtime();
 	MPI_Init (&argc, &argv);      /* starts MPI */
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);        /* get current process id */
   	MPI_Comm_size (MPI_COMM_WORLD, &size);        /* get number of processes */
-
+#endif
 	struct rlimit rlp;
 	float max_magnitude = 0;
 	float max_u = 0;
@@ -26,23 +27,18 @@ int main(int argc, char *argv[]){
 	float min_u = 0;
 	float min_v = 0;
 	float min_w = 0;
-	int nz=0, lowerbound;
-	/*rlp.rlim_cur = 10220;
-	rlp.rlim_max = 10220;
-	//set the number of open file desriptors to MAX_CONNECTIONS
-	if (setrlimit (RLIMIT_NOFILE,&rlp) == -1) {
-		perror("setrlimit");
-		MPI_Finalize();
-		return(1);
-	}*/
+        int NZ; //NZ is the total number of layers, read from the pickpoints file.
+        int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
+        int lowerbound;
+
+	//Open the pickpoints file
+	int n_pickpoints, total_pickpoints;
 	if(size > NZ) {
 		if(rank == 0)
 			printf("You have more processors than layers (nz = %i)!\nSince multiprocessor partitioning works on dividing layers amongs processors... well...\nI'm quitting!\nMake sure np < nz (np < %i, yes.. that's a lower than, not lower or equal than)\n", NZ, NZ);
 		MPI_Finalize();
 		return(1);
 	}
-	//Open the pickpoints file
-	int n_pickpoints, total_pickpoints;
 	FILE *fp_pickpoints;
 	fp_pickpoints=fopen("pickpoints.dat", "r");
 	if( fp_pickpoints == NULL ){
@@ -52,11 +48,21 @@ int main(int argc, char *argv[]){
 		printf("Opened pickpoints file\n");
 	}
 	char buff[200];
-	fgets( buff, sizeof buff, fp_pickpoints );
-	//printf("%s", buff);
-	if (sscanf( buff, "%d", &total_pickpoints) != 1) {
-		printf("Couldn't find the number of pickpoints.\n");
-	}
+        //Skip the line with the extents of the domain as we are not interested.
+        fgets( buff, sizeof buff, fp_pickpoints );
+        //printf("%s", buff);
+        fgets( buff, sizeof buff, fp_pickpoints );
+        if (sscanf( buff, "%d %d %d", &nx, &ny, &NZ) != 3) {
+                printf( "Couldn't read the number of pickpoints.\n"
+                        "The format expected for the pickpoints file is:\n"
+                        "min_x max_x min_y max_y min_z max_z\n"
+                        "n_pickpoints_x n_pickpoints_y n_pickpoints_z\n"
+                        "<list of pickpoints coordinates>\n"
+                        "<list of pickpoint file names>");
+
+        }
+        total_pickpoints=nx*ny*nz;
+
 	//VisIt won't interpolate between 2 time zones, therefoere we need to fill in the gap
 	nz = NZ / size;
 	lowerbound = nz * NX * NY * rank;
@@ -84,7 +90,9 @@ int main(int argc, char *argv[]){
 			//printf("Through the if\n");
 			if ( !sscanf( buff, "%f %f %f", &pts[i], &pts[i+1], &pts[i+2] ) == 3 ) {
 				printf("Couldn't read the %d pickpoint. Aborting.\n", i);
+#ifdef PAR
 				MPI_Finalize();
+#endif
 				return 1;
 			} else {
 				//printf("[%i]\t%d\t%f\t%f\t%f\n", rank, i, pts[i], pts[i+1], pts[i+2]);
@@ -143,7 +151,9 @@ int main(int argc, char *argv[]){
 		fp_input = fopen(inputs_files[i], "r");
 		if (fp_input == NULL) {
 			printf("[%i] File was null %s!", rank,  inputs_files[i]);
+#ifdef PAR
 			MPI_Finalize();
+#endif
 			return(1);
 		}
 		for(j=0; j<5; j++){
@@ -205,7 +215,9 @@ int main(int argc, char *argv[]){
 			//printf("[%i] Read in %s\n", buff);
 			if (!(sscanf(buff, "%f %f %f %f", &times[i], &data[i][0], &data[i][1], &data[i][2]) == 4)){
 				printf("Scanf for pickpoint %i didn't return 4.\nExiting.\n", i);
+#ifdef PAR
 				MPI_Finalize();
+#endif
 				return(1);
 			}
 			//printf("%f %f %f %f\n", &times[i], &data[i][0], &data[i][1], &data[i][2]);
@@ -263,6 +275,7 @@ int main(int argc, char *argv[]){
 	printf("Max || Min v: %lf || %lf \n", max_v, min_v);
 	printf("Max || Min w: %lf || %lf \n", max_w, min_w);
 	
+#ifdef PAR
 	//write out the .visit file. Make sure you have altered tha variable that was counting the timesteps (j in this case)...
 	if (rank==0){
 		FILE *fp_visit_config;
@@ -283,5 +296,6 @@ int main(int argc, char *argv[]){
 		printf("time to compute = %g seconds\n", end_time - start_time);
 	}
 	MPI_Finalize();	
+#endif
 	return(0);	
 }

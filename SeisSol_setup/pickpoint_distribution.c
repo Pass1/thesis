@@ -85,9 +85,9 @@ int main(int argc, char *argv[]){
 	int nx, ny, nz;
 	int i = 1;
 	nz = 0;
-	printf("%g %g %g %g %g %g\n", max_x, min_x, max_y, min_y, max_z, min_z);
-	printf("%d\n", n_points_x * n_points_y * n_points_z);
-	return 1;
+	printf("%g %g %g %g %g %g\n", min_x, max_x, min_y, max_y, min_z, max_z);
+	printf("%d %d %d\n", n_points_x, n_points_y, n_points_z);
+
 	for(z = min_z; z <= max_z && nz<n_points_z ; z += distance_z){
 		ny = 0;
 		for (y = min_y; y <= max_y; y+= distance_y){

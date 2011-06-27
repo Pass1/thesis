@@ -7,9 +7,6 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/types.h>
-#define NX 126 
-#define NY 126
-#define NZ 1
 
 int main(int argc, char *argv[]){
 	int rank = 0;
@@ -30,9 +27,40 @@ int main(int argc, char *argv[]){
 	float min_u = 0;
 	float min_v = 0;
 	float min_w = 0;
-	int nz=0, lowerbound;
+	int NZ; //NZ is the total number of layers, read from the pickpoints file.
+	int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
+	int lowerbound;
+
+	//Open the pickpoints file
+	int n_pickpoints, total_pickpoints;
+	FILE *fp_pickpoints;
+	fp_pickpoints=fopen("pickpoints.dat", "r");
+	if( fp_pickpoints == NULL ){
+		printf("Cannot open pickpoints file\n") ;
+		return(1) ;
+	} else {
+		printf("Opened pickpoints file\n");
+	}
+	char buff[200];
+	//Skip the line with the extents of the domain as we are not interested.
+	fgets( buff, sizeof buff, fp_pickpoints );
+	//printf("%s", buff);
+	fgets( buff, sizeof buff, fp_pickpoints );
+	if (sscanf( buff, "%d %d %d", &nx, &ny, &NZ) != 3) {
+                printf( "Couldn't read the number of pickpoints.\n"
+                        "The format expected for the pickpoints file is:\n"
+                        "min_x max_x min_y max_y min_z max_z\n"
+                        "n_pickpoints_x n_pickpoints_y n_pickpoints_z\n"
+                        "<list of pickpoints coordinates>\n"
+                        "<list of pickpoint file names>");
+
+	}
+	total_pickpoints=nx*ny*nz;
+	
+	
 	rlp.rlim_cur = 16220;
 	rlp.rlim_max = 16220;
+
 	//set the number of open file desriptors to MAX_CONNECTIONS
 	if (setrlimit (RLIMIT_NOFILE,&rlp) == -1) {
 		perror("setrlimit");
@@ -49,39 +77,23 @@ int main(int argc, char *argv[]){
 		return(1);
 	}
 #endif
-	//Open the pickpoints file
-	int n_pickpoints, total_pickpoints;
-	FILE *fp_pickpoints;
-	fp_pickpoints=fopen("pickpoints.dat", "r");
-	if( fp_pickpoints == NULL ){
-		printf("Cannot open pickpoints file\n") ;
-		return(1) ;
-	} else {
-		printf("Opened pickpoints file\n");
-	}
-	char buff[200];
-	fgets( buff, sizeof buff, fp_pickpoints );
-	//printf("%s", buff);
-	if (sscanf( buff, "%d", &total_pickpoints) != 1) {
-		printf("Couldn't find the number of pickpoints.\n");
-	}
 	//VisIt won't interpolate between 2 time zones, therefoere we need to fill in the gap
 #ifdef PAR
 	nz = NZ / size;
-	lowerbound = nz * NX * NY * rank;
+	lowerbound = nz * nx *  * rank;
 	if(rank == size - 1){
 		nz = NZ - (nz * (size - 1));
-		n_pickpoints = NX * NY * nz;
+		n_pickpoints = nx * ny * nz;
 	} else{
 		nz = (NZ / size) + 1;
-		n_pickpoints = nz * NX * NY;
+		n_pickpoints = nz * nx * ny;
 	}
 
 	printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
 	printf("[%i] lowerbound: %i\n", rank, lowerbound);
 #else
 	nz = NZ;
-	n_pickpoints = nz*NX*NY;
+	n_pickpoints = nz*nx*ny;
 #endif
 	float pts[n_pickpoints * 3];
 	int i, counter;
@@ -170,9 +182,9 @@ int main(int argc, char *argv[]){
 	
 	j=0;
 	char outputFileName[100];
-	//float data[n_pickpoints][3], nodal_scalar_data[nz][NY][NX], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
-	float data[n_pickpoints][3], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
-	int dims[] = {NX, NY, nz};
+	//float data[n_pickpoints][3], nodal_scalar_data[nz][ny][nx], u[nz][ny][nx], v[nz][ny][nx], w[nz][ny][nx], uvw[nz][ny][nx][3], times[n_pickpoints];
+	float data[n_pickpoints][3], u[nz][ny][nx], v[nz][ny][nx], w[nz][ny][nx], uvw[nz][ny][nx][3], times[n_pickpoints];
+	int dims[] = {nx, ny, nz};
 	int nvars = 4, x=0, y=0, z=0;
 	int vardims[] = {1, 1, 1, 3};
 	int centering[] = {1, 1, 1};
@@ -223,11 +235,11 @@ int main(int argc, char *argv[]){
 			if (w[z][y][x] > max_w) max_w = w[z][y][x];
 			if (w[z][y][x] < min_w) min_w = w[z][y][x];
 			
-			if((++y % NY) == 0){
+			if((++y % ny) == 0){
 				x++;
 				y=0;
 			}	
-			if (x == NX) {
+			if (x == nx) {
 				z++;
 				x = 0;
 			}
@@ -239,7 +251,7 @@ int main(int argc, char *argv[]){
 			//printf("I'm in the if statement\n");
 			sprintf(outputFileName, "../vis/proc-%03i.%08d.vtk",rank,j);
 			//printf("Will be saving to %s\n", outputFileName );
-			//printf("%i %i %i\n", NX, NY, nz);
+			//printf("%i %i %i\n", nx, ny, nz);
 			write_curvilinear_mesh(outputFileName, 1, dims, (float*)pts, nvars, vardims, centering, varnames, vars);
 		}
 		/*MPI_Barrier(MPI_COMM_WORLD);
@@ -258,6 +270,7 @@ int main(int argc, char *argv[]){
 	printf("Max || Min w: %lf || %lf \n", max_w, min_w);
 	
 	//write out the .visit file. Make sure you have altered tha variable that was counting the timesteps (j in this case)...
+#ifdef PAR
 	if (rank==0){
 		FILE *fp_visit_config;
 		fp_visit_config = fopen("../vis/config.visit", "w");
@@ -269,10 +282,6 @@ int main(int argc, char *argv[]){
 			}
 		}
 	}
-	for (i=0; i<n_pickpoints; i++){
-		fclose(fp_inputs[i]);
-	}
-#ifdef PAR
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* record end time */
 	if (rank == 0){
@@ -281,5 +290,8 @@ int main(int argc, char *argv[]){
 	}
 	MPI_Finalize();	
 #endif
+	for (i=0; i<n_pickpoints; i++){
+		fclose(fp_inputs[i]);
+	}
 	return(0);	
 }

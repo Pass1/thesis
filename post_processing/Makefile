@@ -10,11 +10,11 @@ $(shell [ -d "$(TARGET_DIR)" ] || mkdir -p $(TARGET_DIR))
 
 all : $(TARGET_DIR)/curv_mesh_3d.ex $(TARGET_DIR)/avizo_amira.ex
 
-$(TARGET_DIR)/curv_mesh_3d.ex : $(COMMON)/visit_writer.o
+$(TARGET_DIR)/curv_mesh_3d.ex : $(COMMON)/visit_writer.o source/curv_mesh_3d.c
 	$(CC) -I$(COMMON) $(COMMON)/visit_writer.o source/curv_mesh_3d.c -o $(TARGET_DIR)/curv_mesh_3d.ex
 
 
-$(TARGET_DIR)/avizo_amira.ex:
+$(TARGET_DIR)/avizo_amira.ex: source/avizo_amira.c
 	$(CC) source/avizo_amira.c -o $(TARGET_DIR)/avizo_amira.ex
 
 $(COMMON)/visit_writer.o :

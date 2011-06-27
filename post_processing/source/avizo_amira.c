@@ -88,7 +88,7 @@ static void write_float(float val)
     }
 }
 
-void write_curvilinear_mesh(const char *filename, int ub, int *dims,float *pts,
+void write_curvilinear_mesh(const char *filename, int ub, int *dims, double *domain_extents, float *pts,
                             int nvars, int *vardim, int *centering,
                             const char * const *varnames, float **vars)
 {
@@ -128,7 +128,9 @@ void write_curvilinear_mesh(const char *filename, int ub, int *dims,float *pts,
  
     write_string("Parameters {\n");
     //write_string("\tExpression \"[ Ax , Ay, Az ]\",\n");
-    write_string("\tBoundingBox -16000 2000 -16000 2000 0 0,\n");
+    //write_string("\tBoundingBox -16000 2000 -16000 2000 0 0,\n");
+    sprintf(str, "\tBoundingBox %d %d %d %d %d %d,\n", domain_extents[0], domain_extents[1], domain_extents[2], domain_extents[3], domain_extents[4], domain_extents[5]);
+    write_string(str);
     write_string("\tCoordType \"uniform\"\n");
     write_string("}\n\n");
 
@@ -147,8 +149,6 @@ void write_curvilinear_mesh(const char *filename, int ub, int *dims,float *pts,
              //write_float(vars[i][j]);
 	     fwrite(&vars[i][j], sizeof(float), 1, fp);
         }
-	//printf("\n");
-        //end_line();
     }
     //Write u
     useBinary = 0;
@@ -175,11 +175,10 @@ void write_curvilinear_mesh(const char *filename, int ub, int *dims,float *pts,
        fwrite(&vars[2][j], sizeof(float), 1, fp);
     }
     close_file();
-   
 }
 
 int main(int argc, char *argv[]){
-	int rank = 0;
+	int rank = 0, n_points_x, n_points_y, n_points_z;
 #ifdef PAR
 	int size;
 	double start_time, end_time;
@@ -202,6 +201,7 @@ int main(int argc, char *argv[]){
 	float min_v = 0;
 	float min_w = 0;
 	int nz=0, lowerbound;
+	double max_x, max_y, max_z, min_x, min_y, min_z;
 	/*rlp.rlim_cur = 16000;
 	rlp.rlim_max = 16000;
 	// set the number of open file desriptors to MAX_CONNECTIONS
@@ -231,9 +231,19 @@ int main(int argc, char *argv[]){
 	}
 	char buff[200];
 	fgets( buff, sizeof buff, fp_pickpoints );
-	//printf("%s", buff);
-	if (sscanf( buff, "%d", &total_pickpoints) != 1) {
-		printf("Couldn't find the number of pickpoints.\n");
+	double domain_extents[] = { 0, 0, 0, 0, 0, 0 };
+	if (sscanf(buff, "%lg %lg %lg %lg %lg %lg", &domain_extents[0], &domain_extents[1], &domain_extents[2], &domain_extents[3], &domain_extents[4], &domain_extents[5]) != 6) {
+		printf("Couldn't read the coordinates.\n");
+	}	
+	//printf("%lg %lg %lg %lg %lg %lg\n", domain_extents[0], domain_extents[1], domain_extents[2], domain_extents[3], domain_extents[4], domain_extents[5]);
+	return(3);
+	if (sscanf( buff, "%d %d %d", &n_points_x, &n_points_y, &n_points_z) != 3) {
+		printf(	"Couldn't read the number of pickpoints.\n"
+			"The format expected for the pickpoints file is:\n"
+			"min_x max_x min_y max_y min_z max_z\n"
+			"n_pickpoints_x n_pickpoints_y n_pickpoints_z\n"
+			"<list of pickpoints coordinates>\n"
+			"<list of pickpoint file names>");
 	}
 	//VisIt won't interpolate between 2 zones, therefoere we need to fill in the gap
 #ifdef PAR
@@ -266,7 +276,6 @@ int main(int argc, char *argv[]){
 #ifdef PAR
                                 MPI_Finalize();
 #endif
-
 				return 1;
 			} else {
 				//printf("[%i]\t%d\t%f\t%f\t%f\n", rank, i, pts[i], pts[i+1], pts[i+2]);
@@ -428,7 +437,7 @@ int main(int argc, char *argv[]){
 			sprintf(outputFileName, "../avizo/step.%08d.am", j);
 			//printf("Will be saving to %s\n", outputFileName );
 			//printf("%i %i %i\n", NX, NY, nz);
-			write_curvilinear_mesh(outputFileName, 1, dims, (float*)pts, nvars, vardims, centering, varnames, vars);
+			write_curvilinear_mesh(outputFileName, 1, dims, domain_extents, (float*)pts, nvars, vardims, centering, varnames, vars);
 		}
 		/*MPI_Barrier(MPI_COMM_WORLD);
 		MPI_Finalize();
