@@ -1,27 +1,23 @@
-#ifdef PAR
 #include <mpi.h>
-#endif
 #include "visit_writer.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/types.h>
-#define NX 126 
-#define NY 126
-#define NZ 1
+#define NX 25
+#define NY 25
+#define NZ 25
 
 int main(int argc, char *argv[]){
-	int rank = 0;
-#ifdef PAR
-	int size;
+	int rank,size;
 	double start_time, end_time;
 	/* record start time */
 	start_time = MPI_Wtime();
 	MPI_Init (&argc, &argv);      /* starts MPI */
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);        /* get current process id */
   	MPI_Comm_size (MPI_COMM_WORLD, &size);        /* get number of processes */
-#endif
+
 	struct rlimit rlp;
 	float max_magnitude = 0;
 	float max_u = 0;
@@ -31,24 +27,20 @@ int main(int argc, char *argv[]){
 	float min_v = 0;
 	float min_w = 0;
 	int nz=0, lowerbound;
-	rlp.rlim_cur = 16220;
-	rlp.rlim_max = 16220;
+	/*rlp.rlim_cur = 10220;
+	rlp.rlim_max = 10220;
 	//set the number of open file desriptors to MAX_CONNECTIONS
 	if (setrlimit (RLIMIT_NOFILE,&rlp) == -1) {
 		perror("setrlimit");
-#ifdef PAR
 		MPI_Finalize();
-#endif
 		return(1);
-	}
-#ifdef PAR
+	}*/
 	if(size > NZ) {
 		if(rank == 0)
 			printf("You have more processors than layers (nz = %i)!\nSince multiprocessor partitioning works on dividing layers amongs processors... well...\nI'm quitting!\nMake sure np < nz (np < %i, yes.. that's a lower than, not lower or equal than)\n", NZ, NZ);
 		MPI_Finalize();
 		return(1);
 	}
-#endif
 	//Open the pickpoints file
 	int n_pickpoints, total_pickpoints;
 	FILE *fp_pickpoints;
@@ -66,7 +58,6 @@ int main(int argc, char *argv[]){
 		printf("Couldn't find the number of pickpoints.\n");
 	}
 	//VisIt won't interpolate between 2 time zones, therefoere we need to fill in the gap
-#ifdef PAR
 	nz = NZ / size;
 	lowerbound = nz * NX * NY * rank;
 	if(rank == size - 1){
@@ -78,24 +69,22 @@ int main(int argc, char *argv[]){
 	}
 
 	printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
-	printf("[%i] lowerbound: %i\n", rank, lowerbound);
-#else
-	nz = NZ;
-	n_pickpoints = nz*NX*NY;
-#endif
+	/*MPI_Finalize();
+	return(1);*/
+
 	float pts[n_pickpoints * 3];
 	int i, counter;
 	i = 0;
 	counter = 0;
+	printf("[%i] lowerbound: %i\n", rank, lowerbound);
+	//while ( fgets( buff, sizeof buff, fp_pickpoints ) != NULL && counter < total_pickpoints) {
 	for(counter = 0; counter < total_pickpoints && (fgets( buff, sizeof buff, fp_pickpoints ) != NULL); counter ++){
 //		if ( !sscanf( buff, "%f %f %f", &pts[i], &pts[i++], &pts[i++] ) == 3 ) {
 		if(counter >= lowerbound && counter < lowerbound + n_pickpoints){
 			//printf("Through the if\n");
 			if ( !sscanf( buff, "%f %f %f", &pts[i], &pts[i+1], &pts[i+2] ) == 3 ) {
 				printf("Couldn't read the %d pickpoint. Aborting.\n", i);
-#ifdef PAR
 				MPI_Finalize();
-#endif
 				return 1;
 			} else {
 				//printf("[%i]\t%d\t%f\t%f\t%f\n", rank, i, pts[i], pts[i+1], pts[i+2]);
@@ -105,34 +94,33 @@ int main(int argc, char *argv[]){
 			printf("Failed the if\n");
 		}*/
 	}
-#ifdef PAR
-        printf("[%i] read in %i coordinates (shoulde be n_points * 3)\n", rank, i);
-#else
-        printf("Read in %i coordinates (shoulde be n_points * 3)\n", i);
-#endif
+	printf("[%i] read in %i coordinates (shoulde be n_points * 3)\n", rank, i);	
 
 //Get the name of the files
 	i=0;
 	counter = 0;
 	int len;
-	FILE *fp_inputs[n_pickpoints];
+	//FILE *fp_inputs[n_pickpoints];
+	char inputs_files[n_pickpoints+1][100];
+	off_t inputs_offsets[n_pickpoints+1];
 	printf("Getting pickpoint file name information.\n");
 
 	//while ( fgets( buff, sizeof buff, fp_pickpoints ) != NULL && counter++ < total_pickpoints) {
-	for(counter = 0; counter < total_pickpoints && (fgets(buff, sizeof buff, fp_pickpoints ) != NULL); counter ++){
+	for(counter = 0; counter < total_pickpoints && (fgets(inputs_files[i], sizeof buff, fp_pickpoints ) != NULL); counter ++){
 		//printf("[%i] counter: %i lowerbound %i\n", rank, counter, lowerbound);
 		if(counter >= lowerbound && counter < lowerbound + n_pickpoints){
 			//printf("[%i] Got file name %s", rank, inputs_files[i]);
 			//remove the \n at the end
-			len = strlen(buff);
-			if( buff[len-1] == '\n' )
-			    buff[len-1] = 0;
-			fp_inputs[i] = fopen(buff, "r");
+			len = strlen(inputs_files[i]);
+			if( inputs_files[i][len-1] == '\n' )
+			    inputs_files[i][len-1] = 0;
+			//inputs_files[i] = buff;
+			/*fp_inputs[i] = fopen(inputs_files[i], "r");
 			if (fp_inputs[i] == NULL) {
-				printf("[%i] Unable to open file %s in slot %i.\nExiting.\n", rank, buff, i);
+				printf("[%i] Unable to open file %s in slot %i.\nExiting.\n", rank, inputs_files[i], i);
 				return(1);
-			}/* else {
-				printf("Opened %s in slot %i.\n", buff, i);
+			} else {
+				printf("Opened %s in slot %i.\n", inputs_files[i], i);
 			}*/
 			i++;
 		}
@@ -149,12 +137,22 @@ int main(int argc, char *argv[]){
 //Skip the information at the beginning
 	printf("[%i]Skipping information at the beginning\n", rank);
 	int j;
+	FILE *fp_input;
 	for(i=0; i < n_pickpoints; i++) {
 		//printf("[%i] skipping for file %i - \n", rank, i);
+		fp_input = fopen(inputs_files[i], "r");
+		if (fp_input == NULL) {
+			printf("[%i] File was null %s!", rank,  inputs_files[i]);
+			MPI_Finalize();
+			return(1);
+		}
 		for(j=0; j<5; j++){
-			fgets(buff,sizeof buff, fp_inputs[i]);
+			fgets(buff,sizeof buff, fp_input);
 			//printf("[%i] %i - %s\n", rank, i, buff);
 		}
+		inputs_offsets[i] = ftello(fp_input);
+		//printf("Current location in the file: %i __ %i",  ftell(fp_inputs[i]), inputs_offsets[i]);
+		fclose(fp_input);
 	}
 	printf("[%i] Completed skipping information at the beginning\n", rank);
 	
@@ -170,16 +168,15 @@ int main(int argc, char *argv[]){
 	
 	j=0;
 	char outputFileName[100];
-	//float data[n_pickpoints][3], nodal_scalar_data[nz][NY][NX], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
-	float data[n_pickpoints][3], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
+	float data[n_pickpoints][3], nodal_scalar_data[nz][NY][NX], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
 	int dims[] = {NX, NY, nz};
-	int nvars = 4, x=0, y=0, z=0;
-	int vardims[] = {1, 1, 1, 3};
-	int centering[] = {1, 1, 1};
-	const char *varnames[] = {"u", "v", "w", "uvw"};
+	int nvars = 5, x=0, y=0, z=0;
+	int vardims[] = {1, 1, 1, 1, 3};
+	int centering[] = {1, 1, 1, 1};
+	const char *varnames[] = {"nodal", "u", "v", "w", "uvw"};
 
 	//float *vars[] = {(float *)pts, data, data2};
-	float *vars[] = {(float *)u, (float *)v, (float *)w, (float *)uvw};
+	float *vars[] = {(float *)nodal_scalar_data, (float *)u, (float *)v, (float *)w, (float *)uvw};
 
 	printf("[%i] Starting processing\n", rank);	
 	j=0;
@@ -191,21 +188,29 @@ int main(int argc, char *argv[]){
 		
 		for (i=0; i<n_pickpoints; i++){
 			//printf("[%i] i = %i reading from file: \n", rank, i, inputs_files[i]);
-			if (fgets(buff, sizeof buff, fp_inputs[i]) == NULL){
+			fp_input = fopen(inputs_files[i], "r");
+			if (fp_input == NULL){
+				printf("[%i] Unable to open file %s\n", rank, inputs_files[i]);
+			}
+			fseek(fp_input, inputs_offsets[i], SEEK_SET);
+			if (fgets(buff, sizeof buff, fp_input) == NULL){
 				finished = 1;
 				printf("[%i] Finisde and exiting loop\n", i);
+				fclose(fp_input);
 				break;
 			}
+			//printf("[%i] Previous offset: %d\n",rank, inputs_offsets[i]);
+			inputs_offsets[i] = ftello(fp_input);
+			//printf("[%i] After offset: %d\n", i, inputs_offsets[i]);
+			//printf("[%i] Read in %s\n", buff);
 			if (!(sscanf(buff, "%f %f %f %f", &times[i], &data[i][0], &data[i][1], &data[i][2]) == 4)){
 				printf("Scanf for pickpoint %i didn't return 4.\nExiting.\n", i);
-#ifdef PAR
 				MPI_Finalize();
-#endif
 				return(1);
 			}
 			//printf("%f %f %f %f\n", &times[i], &data[i][0], &data[i][1], &data[i][2]);
 			//printf("%d - %d - %d\n", x, y, z);
-			//nodal_scalar_data[z][y][x] = sqrt(data[i][0]*data[i][0] + data[i][1] * data[i][1] + data[i][2] * data[i][2]);
+			nodal_scalar_data[z][y][x] = sqrt(data[i][0]*data[i][0] + data[i][1] * data[i][1] + data[i][2] * data[i][2]);
 			u[z][y][x] = data[i][0];
 			v[z][y][x] = data[i][1];
 			w[z][y][x] = data[i][2];
@@ -213,9 +218,9 @@ int main(int argc, char *argv[]){
 			uvw[z][y][x][1] = data[i][1];
 			uvw[z][y][x][2] = data[i][2];
 			//printf("nodal_scalar_data[%d][%d][%d] = %.10lf\n", z, y, x, nodal_scalar_data[z][y][x] );
-			/*if (nodal_scalar_data[z][y][x] > max_magnitude) {
+			if (nodal_scalar_data[z][y][x] > max_magnitude) {
 				max_magnitude = nodal_scalar_data[z][y][x];
-			}*/
+			}
 			if (u[z][y][x] > max_u) max_u = u[z][y][x];
 			if (u[z][y][x] < min_u) min_u = u[z][y][x];
 			if (v[z][y][x] > max_v) max_v = v[z][y][x];
@@ -231,6 +236,7 @@ int main(int argc, char *argv[]){
 				z++;
 				x = 0;
 			}
+			fclose(fp_input);
 		}
 		//At this point I should have all the data for this time step.
 		/* Pass the mesh and data to visit_writer. */
@@ -269,10 +275,7 @@ int main(int argc, char *argv[]){
 			}
 		}
 	}
-	for (i=0; i<n_pickpoints; i++){
-		fclose(fp_inputs[i]);
-	}
-#ifdef PAR
+	
 	MPI_Barrier(MPI_COMM_WORLD);
 	/* record end time */
 	if (rank == 0){
@@ -280,6 +283,5 @@ int main(int argc, char *argv[]){
 		printf("time to compute = %g seconds\n", end_time - start_time);
 	}
 	MPI_Finalize();	
-#endif
 	return(0);	
 }
