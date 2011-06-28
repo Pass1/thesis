@@ -1,0 +1,36 @@
+The postprocessing scripts are used to essentially "pivot" the data from a location based format to a timestep based format.
+
+SeisSol outputs a file for each pickpoint specified in the PARAMETER file with each line representing a timestep. For visualisation purposes we need a file for each timestep containing the values for all the pickpoints; this conversion is the responsibility of the postprocessing scripts.
+
+The common folder contains the visit_writer helper borrowed from the VisIt visualization tool. This is used by /source/curv_mesh_3d.c and source/curv_mesh_oc_3d.c in order to write VTK files: the latter uses the slower open/close method for reading the pickpoint data, whereas the former opens all the files at once, requiring administrator rights in order to increase the maximum number of concurrent open files.
+
+avizo_amira.c borrows much from the visit_writer.c and curv_mesh_3d.c and behaves in the same way.
+
+Two compilation options are possible:
+
+	- make will by default compile the serial version of the scripts using gcc.
+	- make PAR=1 will compile the parallel version of the scripts using mpicc.
+
+In both cases a bin directory will be created and the executables will be stored in it.
+
+To run, copy them into your pickpoints folder and ensure there is a pickpoints.dat file with the following contents:
+
+Assuming ./pickpoint_distribution.ex -10 10 -50 50 -10 0 2 2 2 has been run:
+-10 10 -50 50 -10 0
+2 2 2
+-10.000000 -50.000000 -10.000000
+10.000000 -50.000000 -10.000000
+-10.000000 50.000000 -10.000000
+10.000000 50.000000 -10.000000
+-10.000000 -50.000000 -0.1
+10.000000 -50.000000 -0.1
+-10.000000 50.000000 -0.1
+10.000000 50.000000 -0.1
+<pickpoints filename list>
+
+The pickpoints filename list is almost impossible to predict because each pickpoint file has the processor id as part of the name. The easiest way to add it to the pickpoints.dat file is by appending the output of "ls".
+
+The output from curv_mesh_3d.ex and curv_mesh_oc_3d.ex will be stored a directory above the current working one in a folder called vis.
+The output from avizo_amira.ex will be stored a directory above the current working one in a folder called avizo.
+
+The parallel versions of the scripts (only for VTK file generation, as AmiroMesh is not supported yet) divides the domain in horizontal slices, therefore the number of pickpoints on the z axis needs to be >= to the number of processors. It is also important to note that when VisIt is presented with the subdivided domain it does not cater for values between the "slices", therefore the scripts need to replicate the pickpoints at domain boundaries.
