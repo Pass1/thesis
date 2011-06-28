@@ -76,11 +76,9 @@ int main(int argc, char *argv[]){
 		MPI_Finalize();
 		return(1);
 	}
-#endif
 	//VisIt won't interpolate between 2 time zones, therefoere we need to fill in the gap
-#ifdef PAR
 	nz = NZ / size;
-	lowerbound = nz * nx *  * rank;
+	lowerbound = nz * nx * ny * rank;
 	if(rank == size - 1){
 		nz = NZ - (nz * (size - 1));
 		n_pickpoints = nx * ny * nz;
@@ -182,7 +180,6 @@ int main(int argc, char *argv[]){
 	
 	j=0;
 	char outputFileName[100];
-	//float data[n_pickpoints][3], nodal_scalar_data[nz][ny][nx], u[nz][ny][nx], v[nz][ny][nx], w[nz][ny][nx], uvw[nz][ny][nx][3], times[n_pickpoints];
 	float data[n_pickpoints][3], u[nz][ny][nx], v[nz][ny][nx], w[nz][ny][nx], uvw[nz][ny][nx][3], times[n_pickpoints];
 	int dims[] = {nx, ny, nz};
 	int nvars = 4, x=0, y=0, z=0;
@@ -217,17 +214,13 @@ int main(int argc, char *argv[]){
 			}
 			//printf("%f %f %f %f\n", &times[i], &data[i][0], &data[i][1], &data[i][2]);
 			//printf("%d - %d - %d\n", x, y, z);
-			//nodal_scalar_data[z][y][x] = sqrt(data[i][0]*data[i][0] + data[i][1] * data[i][1] + data[i][2] * data[i][2]);
 			u[z][y][x] = data[i][0];
 			v[z][y][x] = data[i][1];
 			w[z][y][x] = data[i][2];
 			uvw[z][y][x][0] = data[i][0];
 			uvw[z][y][x][1] = data[i][1];
 			uvw[z][y][x][2] = data[i][2];
-			//printf("nodal_scalar_data[%d][%d][%d] = %.10lf\n", z, y, x, nodal_scalar_data[z][y][x] );
-			/*if (nodal_scalar_data[z][y][x] > max_magnitude) {
-				max_magnitude = nodal_scalar_data[z][y][x];
-			}*/
+
 			if (u[z][y][x] > max_u) max_u = u[z][y][x];
 			if (u[z][y][x] < min_u) min_u = u[z][y][x];
 			if (v[z][y][x] > max_v) max_v = v[z][y][x];
@@ -269,8 +262,8 @@ int main(int argc, char *argv[]){
 	printf("Max || Min v: %lf || %lf \n", max_v, min_v);
 	printf("Max || Min w: %lf || %lf \n", max_w, min_w);
 	
-	//write out the .visit file. Make sure you have altered tha variable that was counting the timesteps (j in this case)...
 #ifdef PAR
+	//write out the .visit file. Make sure you have altered tha variable that was counting the timesteps (j in this case)...
 	if (rank==0){
 		FILE *fp_visit_config;
 		fp_visit_config = fopen("../vis/config.visit", "w");

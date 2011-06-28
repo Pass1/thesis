@@ -1,6 +1,6 @@
 #ifdef PAR
 #include <mpi.h>
-#ifdef
+#endif
 #include "visit_writer.h"
 #include <math.h>
 #include <stdio.h>
@@ -33,12 +33,6 @@ int main(int argc, char *argv[]){
 
 	//Open the pickpoints file
 	int n_pickpoints, total_pickpoints;
-	if(size > NZ) {
-		if(rank == 0)
-			printf("You have more processors than layers (nz = %i)!\nSince multiprocessor partitioning works on dividing layers amongs processors... well...\nI'm quitting!\nMake sure np < nz (np < %i, yes.. that's a lower than, not lower or equal than)\n", NZ, NZ);
-		MPI_Finalize();
-		return(1);
-	}
 	FILE *fp_pickpoints;
 	fp_pickpoints=fopen("pickpoints.dat", "r");
 	if( fp_pickpoints == NULL ){
@@ -63,20 +57,30 @@ int main(int argc, char *argv[]){
         }
         total_pickpoints=nx*ny*nz;
 
+#ifdef PAR
+	if(size > NZ) {
+		if(rank == 0)
+			printf("You have more processors than layers (nz = %i)!\nSince multiprocessor partitioning works on dividing layers amongs processors... well...\nI'm quitting!\nMake sure np < nz (np < %i, yes.. that's a lower than, not lower or equal than)\n", NZ, NZ);
+		MPI_Finalize();
+		return(1);
+	}
 	//VisIt won't interpolate between 2 time zones, therefoere we need to fill in the gap
 	nz = NZ / size;
-	lowerbound = nz * NX * NY * rank;
+	lowerbound = nz * nx * ny * rank;
 	if(rank == size - 1){
 		nz = NZ - (nz * (size - 1));
-		n_pickpoints = NX * NY * nz;
+		n_pickpoints = nx * ny * nz;
 	} else{
 		nz = (NZ / size) + 1;
-		n_pickpoints = nz * NX * NY;
+		n_pickpoints = nz * nx * ny;
 	}
 
-	printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
-	/*MPI_Finalize();
-	return(1);*/
+        printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
+        printf("[%i] lowerbound: %i\n", rank, lowerbound);
+#else
+        nz = NZ;
+        n_pickpoints = nz*nx*ny;
+#endif
 
 	float pts[n_pickpoints * 3];
 	int i, counter;
@@ -122,14 +126,6 @@ int main(int argc, char *argv[]){
 			len = strlen(inputs_files[i]);
 			if( inputs_files[i][len-1] == '\n' )
 			    inputs_files[i][len-1] = 0;
-			//inputs_files[i] = buff;
-			/*fp_inputs[i] = fopen(inputs_files[i], "r");
-			if (fp_inputs[i] == NULL) {
-				printf("[%i] Unable to open file %s in slot %i.\nExiting.\n", rank, inputs_files[i], i);
-				return(1);
-			} else {
-				printf("Opened %s in slot %i.\n", inputs_files[i], i);
-			}*/
 			i++;
 		}
 	}	
@@ -178,15 +174,15 @@ int main(int argc, char *argv[]){
 	
 	j=0;
 	char outputFileName[100];
-	float data[n_pickpoints][3], nodal_scalar_data[nz][NY][NX], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
-	int dims[] = {NX, NY, nz};
-	int nvars = 5, x=0, y=0, z=0;
-	int vardims[] = {1, 1, 1, 1, 3};
-	int centering[] = {1, 1, 1, 1};
-	const char *varnames[] = {"nodal", "u", "v", "w", "uvw"};
+	float data[n_pickpoints][3], u[nz][ny][nx], v[nz][ny][nx], w[nz][ny][nx], uvw[nz][ny][nx][3], times[n_pickpoints];
+	int dims[] = {nx, ny, nz};
+	int nvars = 4, x=0, y=0, z=0;
+	int vardims[] = {1, 1, 1, 3};
+	int centering[] = {1, 1, 1};
+	const char *varnames[] = {"u", "v", "w", "uvw"};
 
 	//float *vars[] = {(float *)pts, data, data2};
-	float *vars[] = {(float *)nodal_scalar_data, (float *)u, (float *)v, (float *)w, (float *)uvw};
+	float *vars[] = {(float *)u, (float *)v, (float *)w, (float *)uvw};
 
 	printf("[%i] Starting processing\n", rank);	
 	j=0;
@@ -222,17 +218,13 @@ int main(int argc, char *argv[]){
 			}
 			//printf("%f %f %f %f\n", &times[i], &data[i][0], &data[i][1], &data[i][2]);
 			//printf("%d - %d - %d\n", x, y, z);
-			nodal_scalar_data[z][y][x] = sqrt(data[i][0]*data[i][0] + data[i][1] * data[i][1] + data[i][2] * data[i][2]);
 			u[z][y][x] = data[i][0];
 			v[z][y][x] = data[i][1];
 			w[z][y][x] = data[i][2];
 			uvw[z][y][x][0] = data[i][0];
 			uvw[z][y][x][1] = data[i][1];
 			uvw[z][y][x][2] = data[i][2];
-			//printf("nodal_scalar_data[%d][%d][%d] = %.10lf\n", z, y, x, nodal_scalar_data[z][y][x] );
-			if (nodal_scalar_data[z][y][x] > max_magnitude) {
-				max_magnitude = nodal_scalar_data[z][y][x];
-			}
+
 			if (u[z][y][x] > max_u) max_u = u[z][y][x];
 			if (u[z][y][x] < min_u) min_u = u[z][y][x];
 			if (v[z][y][x] > max_v) max_v = v[z][y][x];
@@ -240,11 +232,11 @@ int main(int argc, char *argv[]){
 			if (w[z][y][x] > max_w) max_w = w[z][y][x];
 			if (w[z][y][x] < min_w) min_w = w[z][y][x];
 			
-			if((++y % NY) == 0){
+			if((++y % ny) == 0){
 				x++;
 				y=0;
 			}	
-			if (x == NX) {
+			if (x == nx) {
 				z++;
 				x = 0;
 			}
@@ -257,7 +249,7 @@ int main(int argc, char *argv[]){
 			//printf("I'm in the if statement\n");
 			sprintf(outputFileName, "../vis/proc-%03i.%08d.vtk",rank,j);
 			//printf("Will be saving to %s\n", outputFileName );
-			//printf("%i %i %i\n", NX, NY, nz);
+			//printf("%i %i %i\n", nx, ny, nz);
 			write_curvilinear_mesh(outputFileName, 1, dims, (float*)pts, nvars, vardims, centering, varnames, vars);
 		}
 		/*MPI_Barrier(MPI_COMM_WORLD);
