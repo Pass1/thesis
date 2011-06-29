@@ -1,0 +1,318 @@
+/ Journal File for GAMBIT 2.3.16, Database 2.3.14, ntx86 SP2006032921
+/ Identifier "LOH4"
+/ File opened for write Fri May 20 16:18:42 2011.
+volume create "small_1" width 16 depth 16 height 1 brick
+undo
+/Undone to: volume create "small_1" width 16 depth 16 height 1 brick
+volume create "small_1" width 16000 depth 16000 height 1000 brick
+volume move "small_1" offset -7000 7000 -500
+volume create "medium_1" width 30000 depth 30000 height 1000 brick
+volume move "medium_1" offset 0 0 -500
+volume unite volumes "medium_1" "small_1" keeporiginals
+undo
+/Undone to: volume unite volumes "medium_1" "small_1" keeporiginals
+undo
+/Undone to: volume move "medium_1" offset 0 0 -500
+redo
+volume subtract "medium_1" volumes "small_1" keeptarget keeptool
+face connect "face.2" "face.21" real
+face connect "face.4" "face.24" real
+face connect "face.9" "face.3" real
+volume mesh "small_1" tetrahedral size 300
+sfunction create "test" sourcevolumes "medium_1" startsize 300 growthrate 3 \
+  attachvolumes "small_1" fixed
+sfunction modify "test" sourcevolumes "medium_1" startsize 300 growthrate 3 \
+  sizelimit 4000 attachvolumes "small_1"
+volume mesh "medium_1" tetrahedral size 10000
+undo
+/Undone to: volume mesh "medium_1" tetrahedral size 10000
+sfunction modify "test" sourcevolumes "volume.3" startsize 300 growthrate 3 \
+  sizelimit 4000 attachvolumes "small_1"
+sfunction modify "test" sourcevolumes "small_1" startsize 300 growthrate 3 \
+  sizelimit 4000 attachvolumes "volume.3"
+undo begingroup
+volume delete "volume.3" onlymesh
+sfunction bgrid attachvolumes "volume.3"
+undo endgroup
+volume delete "volume.3" "small_1" "medium_1" lowertopology onlymesh
+undo
+/Undone to: volume delete "volume.3" "small_1" "medium_1" lowertopology onlymesh
+undo
+/Undone to: undo begingroup
+undo
+/Undone to: sfunction modify "test" sourcevolumes "small_1" startsize 300 growthr
+undo
+/Undone to: volume mesh "volume.3" tetrahedral size 1
+undo
+/Undone to: sfunction modify "test" sourcevolumes "volume.3" startsize 300 growth
+undo
+/Undone to: sfunction modify "test" sourcevolumes "medium_1" startsize 300 growth
+undo
+/Undone to: sfunction create "test" sourcevolumes "medium_1" startsize 300 growth
+undo
+/Undone to: volume mesh "small_1" tetrahedral size 300
+undo
+/Undone to: face connect "face.9" "face.3" real
+undo
+/Undone to: face connect "face.4" "face.24" real
+undo
+undo
+redo
+redo
+redo
+sfunction create "test2" sourcefaces "face.4" "face.2" startsize 300 \
+  growthrate 3 sizelimit 1000 attachvolumes "volume.3" fixed
+volume delete "volume.3" lowertopology onlymesh
+sfunction bgrid attachvolumes "volume.3"
+volume mesh "volume.3" tetrahedral size 10000
+volume delete "volume.3" lowertopology onlymesh
+volume delete "medium_1" lowertopology
+sfunction modify "test2" sourcefaces "face.4" "face.2" startsize 300 \
+  growthrate 1.2 sizelimit 1000 attachvolumes "volume.3" label "volume_3"
+sfunction bgrid attachvolumes "volume.3"
+volume mesh "volume.3" tetrahedral size 10000
+volume create "large_1" width 60000 depth 60000 height 1000 brick
+volume move "large_1" offset 0 0 -500
+volume subtract "large_1" volumes "small_1" "volume.3" keeptool
+face connect "face.3" "face.36" "face.25" real
+face connect "face.3" "face.36" real
+face connect "face.18" "face.46" real
+face connect "face.15" "face.44" real
+undo
+/Undone to: face connect "face.15" "face.44" real
+undo
+/Undone to: face merge "face.17" "face.5" mergelower
+undo
+/Undone to: face merge "face.17" "face.5"
+undo
+/Undone to: face merge "face.17" "face.5" mergelower
+undo
+/Undone to: face connect "face.18" "face.46" real
+undo
+/Undone to: face connect "face.3" "face.36" real
+undo
+/Undone to: face connect "face.3" "face.36" "face.25" real
+undo
+/Undone to: volume subtract "large_1" volumes "small_1" "volume.3" keeptool
+undo
+/Undone to: volume move "large_1" offset 0 0 -500
+undo
+/Undone to: volume create "large_1" width 60000 depth 60000 height 1000 brick
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+volume delete "small_1" "volume.3" lowertopology onlymesh
+face connect "face.5" "face.17" real
+volume create "large_1" width 60000 depth 60000 height 1000 brick
+volume move "large_1" offset 0 0 -500
+volume subtract "large_1" volumes "small_1" "volume.3" keeptool
+face split "face.37" connected keeptool faces "face.4"
+face connect "face.5" "face.37" real
+face connect "face.49" "face.17" real
+face split "face.36" connected keeptool faces "face.2"
+face connect "face.3" "face.36" real
+face connect "face.25" "face.51" real
+face connect "face.15" "face.44" real
+face connect "face.18" "face.46" real
+volume create "small_2" width 16000 depth 16000 height 8000 brick
+volume move "small_2" offset -7000 7000 -9000
+undo
+/Undone to: volume move "small_2" offset -7000 7000 -9000
+volume move "small_2" offset -7000 7000 -5000
+face connect "face.55" "face.1" real
+volume create "medium_2" width 30000 depth 30000 height 10000 brick
+volume move "medium_2" offset 0 0 -6000
+volume subtract "medium_2" volumes "small_2" keeptool
+undo
+/Undone to: volume subtract "medium_2" volumes "small_2" keeptool
+undo
+/Undone to: volume move "medium_2" offset 0 0 -6000
+undo
+/Undone to: volume create "medium_2" width 30000 depth 30000 height 10000 brick
+volume create "medium_2" width 30000 depth 30000 height 8000 brick
+volume move "medium_2" offset 0 0 -5000
+volume subtract "medium_2" volumes "small_2" keeptool
+face connect "face.64" "face.51" real
+face connect "face.67" "face.53" real
+face connect "face.14" "face.69" real
+save
+volume create "large_2" width 60000 depth 60000 height 29000 brick
+volume move "large_2" offset 0 0 -14500
+volume subtract "large_2" volumes "medium_2" "small_2" keeptool
+face split "face.78" connected keeptool faces "face.64"
+face split "face.81" connected keeptool faces "face.67"
+face connect "face.68" "face.78" real
+face connect "face.52" "face.84" real
+face connect "face.81" "face.60" real
+face connect "face.54" "face.86" real
+face connect "face.82" "face.59" real
+face connect "face.57" "face.80" real
+face split "face.79" connected keeptool faces "face.64" "face.67"
+face connect "face.56" "face.79" real
+face connect "face.50" "face.85" real
+undo
+/Undone to: face connect "face.50" "face.85" real
+undo
+/Undone to: face connect "face.56" "face.79" real
+undo
+/Undone to: face split "face.79" connected keeptool faces "face.64" "face.67"
+undo
+/Undone to: face connect "face.57" "face.80" real
+undo
+/Undone to: face connect "face.82" "face.59" real
+undo
+/Undone to: face connect "face.54" "face.86" real
+undo
+/Undone to: face connect "face.81" "face.60" real
+undo
+/Undone to: face connect "face.52" "face.84" real
+undo
+/Undone to: face connect "face.68" "face.78" real
+undo
+/Undone to: face split "face.81" connected keeptool faces "face.67"
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+undo
+redo
+redo
+redo
+redo
+redo
+redo
+redo
+redo
+redo
+redo
+volume subtract "large_2" volumes "small_1" "volume.3" "large_1" keeptool
+face connect "face.101" "face.47" real
+volume create "tmp" width 60000 depth 60000 height 1000 brick
+volume move "tmp" offset 0 0 -29500
+volume unite volumes "large_2" "tmp"
+save
+solver select "Generic"
+save
+volume mesh "small_1" tetrahedral size 300 ignoresf
+sfunction modify "volume_3" sourcefaces "face.4" "face.2" startsize 300 \
+  growthrate 1.15 sizelimit 1000 attachvolumes "volume.3" label "medium_1"
+sfunction bgrid attachvolumes "volume.3"
+volume mesh "volume.3" tetrahedral size 10000
+sfunction create "larger" sourcefaces "face.18" "face.15" "face.25" "face.3" \
+  "face.5" "face.49" startsize 800 growthrate 1.4 sizelimit 5000 \
+  attachvolumes "large_1" fixed
+sfunction modify "larger" sourcefaces "face.18" "face.15" "face.25" "face.3" \
+  "face.5" "face.49" startsize 800 growthrate 1.4 sizelimit 5000 \
+  attachvolumes "large_1" label "large1"
+sfunction bgrid attachvolumes "large_1"
+volume mesh "large_1" tetrahedral size 10000
+window modify invisible mesh
+volume mesh "small_2" tetrahedral size 350 ignoresf
+window modify visible mesh
+sfunction create "midium_2" sourcefaces "face.67" "face.64" "face.14" \
+  startsize 400 growthrate 1.15 sizelimit 1000 attachvolumes "medium_2" fixed
+sfunction bgrid attachvolumes "medium_2"
+volume mesh "medium_2" tetrahedral size 100000
+window modify invisible mesh
+sfunction create "large_2" sourcefaces "face.50" "face.52" "face.54" \
+  "face.57" "face.68" "face.56" "face.82" "face.101" "face.81" startsize 950 \
+  growthrate 1.5 sizelimit 5000 attachvolumes "large_2" fixed
+sfunction bgrid attachvolumes "large_2"
+volume mesh "large_2" tetrahedral size 10000
+undo
+/Undone to: volume mesh "large_2" tetrahedral size 10000
+sfunction modify "large_2" sourcefaces "face.50" "face.52" "face.54" \
+  "face.57" "face.68" "face.56" "face.82" "face.101" "face.81" startsize 850 \
+  growthrate 1.5 sizelimit 5000 attachvolumes "large_2"
+save
+/ File closed at Fri May 20 20:22:30 2011, 203.66 cpu second(s), 158255912 maximum memory.
+/ Journal File for GAMBIT 2.3.16, Database 2.3.14, ntx86 SP2006032921
+/ Identifier "LOH4"
+/ File opened for append Fri May 20 20:22:49 2011.
+sfunction bgrid attachvolumes "large_2"
+volume mesh "large_2" tetrahedral size 10000
+sfunction modify "large_2" sourcefaces "face.50" "face.52" "face.54" \
+  "face.57" "face.68" "face.56" "face.82" "face.101" "face.81" startsize 800 \
+  growthrate 1.5 sizelimit 5000 attachvolumes "large_2"
+undo begingroup
+volume delete "large_2" onlymesh
+sfunction bgrid attachvolumes "large_2"
+volume mesh "large_2" tetrahedral size 10000
+undo endgroup
+volume delete "small_1" "volume.3" "large_1" "small_2" "medium_2" "large_2" \
+  lowertopology onlymesh
+sfunction bgrid attachvolumes "small_1"
+volume mesh "small_1" tetrahedral size 300
+volume mesh "volume.3" tetrahedral size 10000
+undo
+/Undone to: volume mesh "volume.3" tetrahedral size 10000
+sfunction modify "medium_1" sourcefaces "face.4" "face.2" startsize 400 \
+  growthrate 1.15 sizelimit 1000 attachvolumes "volume.3"
+sfunction bgrid attachvolumes "volume.3"
+volume mesh "volume.3" tetrahedral size 10000
+undo
+/Undone to: volume mesh "volume.3" tetrahedral size 10000
+volume mesh "volume.3" tetrahedral size 10000
+volume mesh "large_1" tetrahedral size 10000
+volume delete "large_1" "small_2" "medium_2" "large_2" "small_1" "volume.3" \
+  lowertopology onlymesh
+volume mesh "small_1" tetrahedral size 300 ignoresf
+undo
+/Undone to: volume mesh "small_1" tetrahedral size 300 ignoresf
+redo
+sfunction modify "medium_1" sourcefaces "face.4" "face.2" startsize 325 \
+  growthrate 1.15 sizelimit 1000 attachvolumes "volume.3"
+sfunction bgrid attachvolumes "volume.3"
+volume mesh "volume.3" tetrahedral size 10000
+volume mesh "large_1" tetrahedral size 10000
+undo
+/Undone to: volume mesh "large_1" tetrahedral size 10000
+volume mesh "large_1" tetrahedral size 10000
+volume mesh "small_2" tetrahedral size 350
+sfunction modify "midium_2" sourcefaces "face.67" "face.64" "face.14" \
+  startsize 350 growthrate 1.15 sizelimit 1000 attachvolumes "medium_2"
+sfunction bgrid attachvolumes "medium_2"
+volume mesh "medium_2" tetrahedral size 100000
+sfunction modify "large_2" sourcefaces "face.50" "face.52" "face.54" \
+  "face.57" "face.68" "face.56" "face.82" "face.101" "face.81" startsize 800 \
+  growthrate 1.5 sizelimit 5000 attachvolumes "large_2"
+volume mesh "large_2" tetrahedral size 10000
+physics create "105" btype "ELEMENT_SIDE" face "face.29" "face.71" "face.111" \
+  "face.110" "face.109" "face.112" "face.30" "face.28" "face.31"
+physics create "101" btype "ELEMENT_SIDE" face "face.26" "face.32" "face.6"
+physics create "2" ctype "FLUID" volume "small_2" "medium_2" "large_2"
+physics create "1" ctype "FLUID" volume "small_1" "volume.3" "large_1"
+physics delete "2" ctype
+physics create ctype "FLUID" volume "small_2" "medium_2" "large_2"
+physics delete "fluid.5" ctype
+physics create "2" ctype "FLUID" volume "small_2" "medium_2" "large_2"
+save
