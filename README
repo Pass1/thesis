@@ -20,3 +20,6 @@ Contains scripts to:
 	- interlace frames for 3D rendering
 	- cut a series of frames 13600x3072 into 1360x768 subframes for z2 (AESOP display)
 Plus it also contains a sample attributes.xml file to be loaded in VisIt with symmetrical Gaussian distribution and two guides: one on how to use VB.3 (to synchronise the playback of the multiple movies on the AESOP) and ffmpeg.
+
+LOH4:
+Contains files used for the LOH.4 example.
