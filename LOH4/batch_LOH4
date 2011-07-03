@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# @ account_no          = k66
+# @ job_name            = seissol_LOH4
+# @ job_type            = bluegene
+# @ output              = $(job_name).$(jobid).out
+# @ error               = $(job_name).$(jobid).err
+# @ environment         = COPY_ALL
+# @ wall_clock_limit    = 07:00:00
+# @ notification        = never
+# @ bg_size             = 512
+# @ class               = default
+# @ queue
+#
+# Run the program on the Bluegene/P of Shaheen:
+# Execution mode switches: 
+# SMP  (for 1 MPI task  per quad-core)
+# DUAL (for 2 MPI tasks per quad-core)
+# VN   (for 4 MPI tasks per quad-core)
+mpirun -mode SMP -np 512 -exe /home/passone/seissol/bin/seissolxx.ppc64 -cwd /home/passone/scratch/seissol/layered/ -args "PARAMETERS_LOH4.par"

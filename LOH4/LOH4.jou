@@ -1,19 +1,10 @@
 / Journal File for GAMBIT 2.3.16, Database 2.3.14, ntx86 SP2006032921
 / Identifier "LOH4"
 / File opened for write Fri May 20 16:18:42 2011.
-volume create "small_1" width 16 depth 16 height 1 brick
-undo
-/Undone to: volume create "small_1" width 16 depth 16 height 1 brick
 volume create "small_1" width 16000 depth 16000 height 1000 brick
 volume move "small_1" offset -7000 7000 -500
 volume create "medium_1" width 30000 depth 30000 height 1000 brick
 volume move "medium_1" offset 0 0 -500
-volume unite volumes "medium_1" "small_1" keeporiginals
-undo
-/Undone to: volume unite volumes "medium_1" "small_1" keeporiginals
-undo
-/Undone to: volume move "medium_1" offset 0 0 -500
-redo
 volume subtract "medium_1" volumes "small_1" keeptarget keeptool
 face connect "face.2" "face.21" real
 face connect "face.4" "face.24" real
@@ -23,9 +14,6 @@ sfunction create "test" sourcevolumes "medium_1" startsize 300 growthrate 3 \
   attachvolumes "small_1" fixed
 sfunction modify "test" sourcevolumes "medium_1" startsize 300 growthrate 3 \
   sizelimit 4000 attachvolumes "small_1"
-volume mesh "medium_1" tetrahedral size 10000
-undo
-/Undone to: volume mesh "medium_1" tetrahedral size 10000
 sfunction modify "test" sourcevolumes "volume.3" startsize 300 growthrate 3 \
   sizelimit 4000 attachvolumes "small_1"
 sfunction modify "test" sourcevolumes "small_1" startsize 300 growthrate 3 \
@@ -133,20 +121,9 @@ face connect "face.25" "face.51" real
 face connect "face.15" "face.44" real
 face connect "face.18" "face.46" real
 volume create "small_2" width 16000 depth 16000 height 8000 brick
-volume move "small_2" offset -7000 7000 -9000
-undo
-/Undone to: volume move "small_2" offset -7000 7000 -9000
+
 volume move "small_2" offset -7000 7000 -5000
 face connect "face.55" "face.1" real
-volume create "medium_2" width 30000 depth 30000 height 10000 brick
-volume move "medium_2" offset 0 0 -6000
-volume subtract "medium_2" volumes "small_2" keeptool
-undo
-/Undone to: volume subtract "medium_2" volumes "small_2" keeptool
-undo
-/Undone to: volume move "medium_2" offset 0 0 -6000
-undo
-/Undone to: volume create "medium_2" width 30000 depth 30000 height 10000 brick
 volume create "medium_2" width 30000 depth 30000 height 8000 brick
 volume move "medium_2" offset 0 0 -5000
 volume subtract "medium_2" volumes "small_2" keeptool
@@ -247,9 +224,6 @@ sfunction create "large_2" sourcefaces "face.50" "face.52" "face.54" \
   "face.57" "face.68" "face.56" "face.82" "face.101" "face.81" startsize 950 \
   growthrate 1.5 sizelimit 5000 attachvolumes "large_2" fixed
 sfunction bgrid attachvolumes "large_2"
-volume mesh "large_2" tetrahedral size 10000
-undo
-/Undone to: volume mesh "large_2" tetrahedral size 10000
 sfunction modify "large_2" sourcefaces "face.50" "face.52" "face.54" \
   "face.57" "face.68" "face.56" "face.82" "face.101" "face.81" startsize 850 \
   growthrate 1.5 sizelimit 5000 attachvolumes "large_2"
@@ -272,15 +246,9 @@ volume delete "small_1" "volume.3" "large_1" "small_2" "medium_2" "large_2" \
   lowertopology onlymesh
 sfunction bgrid attachvolumes "small_1"
 volume mesh "small_1" tetrahedral size 300
-volume mesh "volume.3" tetrahedral size 10000
-undo
-/Undone to: volume mesh "volume.3" tetrahedral size 10000
 sfunction modify "medium_1" sourcefaces "face.4" "face.2" startsize 400 \
   growthrate 1.15 sizelimit 1000 attachvolumes "volume.3"
 sfunction bgrid attachvolumes "volume.3"
-volume mesh "volume.3" tetrahedral size 10000
-undo
-/Undone to: volume mesh "volume.3" tetrahedral size 10000
 volume mesh "volume.3" tetrahedral size 10000
 volume mesh "large_1" tetrahedral size 10000
 volume delete "large_1" "small_2" "medium_2" "large_2" "small_1" "volume.3" \
@@ -293,9 +261,6 @@ sfunction modify "medium_1" sourcefaces "face.4" "face.2" startsize 325 \
   growthrate 1.15 sizelimit 1000 attachvolumes "volume.3"
 sfunction bgrid attachvolumes "volume.3"
 volume mesh "volume.3" tetrahedral size 10000
-volume mesh "large_1" tetrahedral size 10000
-undo
-/Undone to: volume mesh "large_1" tetrahedral size 10000
 volume mesh "large_1" tetrahedral size 10000
 volume mesh "small_2" tetrahedral size 350
 sfunction modify "midium_2" sourcefaces "face.67" "face.64" "face.14" \
