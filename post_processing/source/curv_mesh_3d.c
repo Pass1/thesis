@@ -1,12 +1,20 @@
 #ifdef PAR
 #include <mpi.h>
 #endif
+#include <stdlib.h>
 #include "visit_writer.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/types.h>
+
+char* build_string (char *first, char *second) {
+	char* both = (char*) malloc((strlen(first) + strlen(second) + 2) * sizeof(char));
+	sprintf(both, "%s/%s", first, second);
+	printf("And the sting is: %s\n", both);
+	return both;
+}
 
 int main(int argc, char *argv[]){
 	int rank = 0;
@@ -30,11 +38,14 @@ int main(int argc, char *argv[]){
 	int NZ; //NZ is the total number of layers, read from the pickpoints file.
 	int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
 	int lowerbound;
-
+	char *root_folder = "";
+	char *output_folder = "../vis/"; 
+	if (argc == 2) { root_folder = argv[1]; }
+	//root = argv[1];
 	//Open the pickpoints file
 	int n_pickpoints, total_pickpoints;
 	FILE *fp_pickpoints;
-	fp_pickpoints=fopen("pickpoints.dat", "r");
+	fp_pickpoints=fopen( build_string(root_folder, "pickpoints.txt"), "r");
 	if( fp_pickpoints == NULL ){
 		printf("Cannot open pickpoints file\n") ;
 		return(1) ;
@@ -137,13 +148,14 @@ int main(int argc, char *argv[]){
 			len = strlen(buff);
 			if( buff[len-1] == '\n' )
 			    buff[len-1] = 0;
-			fp_inputs[i] = fopen(buff, "r");
+			fp_inputs[i] = fopen(build_string(root_folder, buff), "r");
 			if (fp_inputs[i] == NULL) {
 				printf("[%i] Unable to open file %s in slot %i.\nExiting.\n", rank, buff, i);
 				return(1);
 			}/* else {
 				printf("Opened %s in slot %i.\n", buff, i);
 			}*/
+			return 23;
 			i++;
 		}
 	}	
@@ -242,7 +254,7 @@ int main(int argc, char *argv[]){
 		//cd printf("I'm out of the loop!\n");
 		if (!finished){
 			//printf("I'm in the if statement\n");
-			sprintf(outputFileName, "../vis/proc-%03i.%08d.vtk",rank,j);
+			sprintf(outputFileName, "%s/%s/proc-%03i.%08d.vtk", root_folder, output_folder, rank,j);
 			//printf("Will be saving to %s\n", outputFileName );
 			//printf("%i %i %i\n", nx, ny, nz);
 			write_curvilinear_mesh(outputFileName, 1, dims, (float*)pts, nvars, vardims, centering, varnames, vars);
@@ -266,7 +278,7 @@ int main(int argc, char *argv[]){
 	//write out the .visit file. Make sure you have altered tha variable that was counting the timesteps (j in this case)...
 	if (rank==0){
 		FILE *fp_visit_config;
-		fp_visit_config = fopen("../vis/config.visit", "w");
+		fp_visit_config = fopen(build_string(root_folder,build_string(output_folder, "config.visit")), "w");
 		//NBLOCKS tells visit that every block of 4 ﬁles is related in a single time step
 		fprintf(fp_visit_config, "!NBLOCKS %i\n", size);
 		for( counter=0; counter < j; counter++ ){
