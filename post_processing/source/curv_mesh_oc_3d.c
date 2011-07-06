@@ -2,11 +2,20 @@
 #include <mpi.h>
 #endif
 #include "visit_writer.h"
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+
+char* build_string (char *first, char *second) {
+	char* both = (char*) malloc((strlen(first) + strlen(second) + 2) * sizeof(char));
+	sprintf(both, "%s/%s", first, second);
+	//printf("And the string is: %s\n", both);
+	return both;
+}
 
 int main(int argc, char *argv[]){
 	int rank = 0;
@@ -29,12 +38,15 @@ int main(int argc, char *argv[]){
 	float min_w = 0;
         int NZ; //NZ is the total number of layers, read from the pickpoints file.
         int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
-        int lowerbound;
+        int lowerbound=0;
+	char *root_folder = "";
+        char *output_folder = "../vis2/";
+        if (argc == 2) { root_folder = argv[1]; }
 
 	//Open the pickpoints file
 	int n_pickpoints, total_pickpoints;
 	FILE *fp_pickpoints;
-	fp_pickpoints=fopen("pickpoints.dat", "r");
+	fp_pickpoints=fopen( build_string(root_folder, "/pickpoints.dat"), "r");
 	if( fp_pickpoints == NULL ){
 		printf("Cannot open pickpoints file\n") ;
 		return(1) ;
@@ -53,9 +65,11 @@ int main(int argc, char *argv[]){
                         "n_pickpoints_x n_pickpoints_y n_pickpoints_z\n"
                         "<list of pickpoints coordinates>\n"
                         "<list of pickpoint file names>");
-
+			return 1;
         }
-        total_pickpoints=nx*ny*nz;
+        total_pickpoints=nx*ny*NZ;
+	//create the output folder
+	mkdir(build_string(root_folder,output_folder), S_IRWXU | S_IRWXG | S_IRWXO);
 
 #ifdef PAR
 	if(size > NZ) {
@@ -74,14 +88,12 @@ int main(int argc, char *argv[]){
 		nz = (NZ / size) + 1;
 		n_pickpoints = nz * nx * ny;
 	}
-
-        printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
         printf("[%i] lowerbound: %i\n", rank, lowerbound);
 #else
         nz = NZ;
         n_pickpoints = nz*nx*ny;
 #endif
-
+        printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
 	float pts[n_pickpoints * 3];
 	int i, counter;
 	i = 0;
@@ -106,8 +118,12 @@ int main(int argc, char *argv[]){
 			printf("Failed the if\n");
 		}*/
 	}
+#ifdef PAR
 	printf("[%i] read in %i coordinates (shoulde be n_points * 3)\n", rank, i);	
-
+#else
+	printf("Read in %i coordinates (shoulde be n_points * 3)\n", i);
+#endif
+	
 //Get the name of the files
 	i=0;
 	counter = 0;
@@ -121,7 +137,7 @@ int main(int argc, char *argv[]){
 	for(counter = 0; counter < total_pickpoints && (fgets(inputs_files[i], sizeof buff, fp_pickpoints ) != NULL); counter ++){
 		//printf("[%i] counter: %i lowerbound %i\n", rank, counter, lowerbound);
 		if(counter >= lowerbound && counter < lowerbound + n_pickpoints){
-			//printf("[%i] Got file name %s", rank, inputs_files[i]);
+			printf("[%i] Got file name %s", rank, inputs_files[i]);
 			//remove the \n at the end
 			len = strlen(inputs_files[i]);
 			if( inputs_files[i][len-1] == '\n' )
@@ -144,9 +160,9 @@ int main(int argc, char *argv[]){
 	FILE *fp_input;
 	for(i=0; i < n_pickpoints; i++) {
 		//printf("[%i] skipping for file %i - \n", rank, i);
-		fp_input = fopen(inputs_files[i], "r");
+		fp_input = fopen(build_string(root_folder,inputs_files[i]), "r");
 		if (fp_input == NULL) {
-			printf("[%i] File was null %s!", rank,  inputs_files[i]);
+			printf("[%i] File in position %d was null %s!", rank, i, inputs_files[i]);
 #ifdef PAR
 			MPI_Finalize();
 #endif
@@ -166,7 +182,7 @@ int main(int argc, char *argv[]){
 		fgets(buff,sizeof buff, fp_inputs[i]);
 		printf("Before %s\n", buff );
 		fclose(fp_inputs[i]);
-		fp_inputs[i] = fopen(inputs_files[i], "r");
+		fp_inputs[i] = fopen(build_string(root_folder, inputs_files[i]), "r");
 		fseek(fp_inputs[i], inputs_offsets[i], SEEK_SET);
 		fgets(buff,sizeof buff, fp_inputs[i]);
 		printf("After %s\n\n", buff );
@@ -178,7 +194,7 @@ int main(int argc, char *argv[]){
 	int dims[] = {nx, ny, nz};
 	int nvars = 4, x=0, y=0, z=0;
 	int vardims[] = {1, 1, 1, 3};
-	int centering[] = {1, 1, 1};
+	int centering[] = {1, 1, 1, 1};
 	const char *varnames[] = {"u", "v", "w", "uvw"};
 
 	//float *vars[] = {(float *)pts, data, data2};
@@ -194,7 +210,7 @@ int main(int argc, char *argv[]){
 		
 		for (i=0; i<n_pickpoints; i++){
 			//printf("[%i] i = %i reading from file: \n", rank, i, inputs_files[i]);
-			fp_input = fopen(inputs_files[i], "r");
+			fp_input = fopen(build_string(root_folder,inputs_files[i]), "r");
 			if (fp_input == NULL){
 				printf("[%i] Unable to open file %s\n", rank, inputs_files[i]);
 			}
@@ -247,10 +263,10 @@ int main(int argc, char *argv[]){
 		//cd printf("I'm out of the loop!\n");
 		if (!finished){
 			//printf("I'm in the if statement\n");
-			sprintf(outputFileName, "../vis/proc-%03i.%08d.vtk",rank,j);
+			sprintf(outputFileName, "%s/%s/proc-%03i.%08d.vtk", root_folder, output_folder, rank,j);
 			//printf("Will be saving to %s\n", outputFileName );
 			//printf("%i %i %i\n", nx, ny, nz);
-			write_curvilinear_mesh(outputFileName, 1, dims, (float*)pts, nvars, vardims, centering, varnames, vars);
+			write_curvilinear_mesh(outputFileName, 0, dims, (float*)pts, nvars, vardims, centering, varnames, vars);
 		}
 		/*MPI_Barrier(MPI_COMM_WORLD);
 		MPI_Finalize();
@@ -262,7 +278,7 @@ int main(int argc, char *argv[]){
 		fclose(fp_inputs[i]);
 	}*/
 	
-	printf("Maxi magnitude was %lf\n", max_magnitude);
+	//printf("Maxi magnitude was %lf\n", max_magnitude);
 	printf("Max || Min u: %lf || %lf \n", max_u, min_u);
 	printf("Max || Min v: %lf || %lf \n", max_v, min_v);
 	printf("Max || Min w: %lf || %lf \n", max_w, min_w);
@@ -271,7 +287,7 @@ int main(int argc, char *argv[]){
 	//write out the .visit file. Make sure you have altered tha variable that was counting the timesteps (j in this case)...
 	if (rank==0){
 		FILE *fp_visit_config;
-		fp_visit_config = fopen("../vis/config.visit", "w");
+		fp_visit_config = fopen(build_string(root_folder,build_string(output_folder, "config.visit")), "w")
 		//NBLOCKS tells visit that every block of 4 ﬁles is related in a single time step
 		fprintf(fp_visit_config, "!NBLOCKS %i\n", size);
 		for( counter=0; counter < j; counter++ ){
