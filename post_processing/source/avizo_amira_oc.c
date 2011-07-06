@@ -2,18 +2,23 @@
 #include <mpi.h>
 #endif
 #include <math.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/types.h>
-#define NX 25
-#define NY 25
-#define NZ 25
+#include <sys/stat.h>
 
 static FILE *fp = NULL;
 static int useBinary = 0;
 static int numInColumn = 0;
 
+char* build_string (char *first, char *second) {
+	char* both = (char*) malloc((strlen(first) + strlen(second) + 2) * sizeof(char));
+	sprintf(both, "%s/%s", first, second);
+	//printf("And the string is: %s\n", both);
+	return both;
+}
 
 static void end_line(void)
 {
@@ -178,7 +183,7 @@ void write_curvilinear_mesh(const char *filename, int ub, int *dims, double *dom
 }
 
 int main(int argc, char *argv[]){
-	int rank = 0, n_points_x, n_points_y, n_points_z;
+	int rank = 0;
 #ifdef PAR
 	int size;
 	double start_time, end_time;
@@ -200,8 +205,14 @@ int main(int argc, char *argv[]){
 	float min_u = 0;
 	float min_v = 0;
 	float min_w = 0;
-	int nz=0, lowerbound;
+	int NZ; //NZ is the total number of layers, read from the pickpoints file.
+	int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
+	int lowerbound=0;
 	double max_x, max_y, max_z, min_x, min_y, min_z;
+	char *root_folder = "";
+	char *output_folder = "../amira/";
+	if (argc == 2) { root_folder = argv[1]; }
+	
 	/*rlp.rlim_cur = 16000;
 	rlp.rlim_max = 16000;
 	// set the number of open file desriptors to MAX_CONNECTIONS
@@ -211,18 +222,10 @@ int main(int argc, char *argv[]){
 		return(1);
 	}*/
 
-#ifdef PAR
-	if(size > NZ) {
-		if(rank == 0)
-			printf("You have more processors than layers (nz = %i)!\nSince multiprocessor partitioning works on dividing layers amongs processors... well...\nI'm quitting!\nMake sure np < nz (np < %i, yes.. that's a lower than, not lower or equal than)\n", NZ, NZ);
-		MPI_Finalize();
-		return(1);
-	}
-#endif
 	//Open the pickpoints file
 	int n_pickpoints, total_pickpoints;
 	FILE *fp_pickpoints;
-	fp_pickpoints=fopen("pickpoints.dat", "r");
+	fp_pickpoints=fopen( build_string(root_folder, "/pickpoints.dat"), "r");
 	if( fp_pickpoints == NULL ){
 		printf("Cannot open pickpoints file\n") ;
 		return(1) ;
@@ -235,38 +238,51 @@ int main(int argc, char *argv[]){
 	if (sscanf(buff, "%lg %lg %lg %lg %lg %lg", &domain_extents[0], &domain_extents[1], &domain_extents[2], &domain_extents[3], &domain_extents[4], &domain_extents[5]) != 6) {
 		printf("Couldn't read the coordinates.\n");
 	}	
-	//printf("%lg %lg %lg %lg %lg %lg\n", domain_extents[0], domain_extents[1], domain_extents[2], domain_extents[3], domain_extents[4], domain_extents[5]);
-	return(3);
-	if (sscanf( buff, "%d %d %d", &n_points_x, &n_points_y, &n_points_z) != 3) {
+	printf("%lg %lg %lg %lg %lg %lg\n", domain_extents[0], domain_extents[1], domain_extents[2], domain_extents[3], domain_extents[4], domain_extents[5]);
+	fgets( buff, sizeof buff, fp_pickpoints );
+	if (sscanf( buff, "%d %d %d", &nx, &ny, &NZ) != 3) {
 		printf(	"Couldn't read the number of pickpoints.\n"
 			"The format expected for the pickpoints file is:\n"
 			"min_x max_x min_y max_y min_z max_z\n"
 			"n_pickpoints_x n_pickpoints_y n_pickpoints_z\n"
 			"<list of pickpoints coordinates>\n"
 			"<list of pickpoint file names>");
+		return 1;
 	}
+	total_pickpoints=nx*ny*NZ;
+	//create the output folder
+	mkdir(build_string(root_folder,output_folder), S_IRWXU | S_IRWXG | S_IRWXO);
+#ifdef PAR
+	if(size > NZ) {
+		if(rank == 0)
+			printf("You have more processors than layers (nz = %i)!\nSince multiprocessor partitioning works on dividing layers amongs processors... well...\nI'm quitting!\nMake sure np < nz (np < %i, yes.. that's a lower than, not lower or equal than)\n", NZ, NZ);
+		MPI_Finalize();
+		return(1);
+	}
+#endif
 	//VisIt won't interpolate between 2 zones, therefoere we need to fill in the gap
 #ifdef PAR
         nz = NZ / size;
-        lowerbound = nz * NX * NY * rank;
+        lowerbound = nz * nx * ny * rank;
         if(rank == size - 1){
                 nz = NZ - (nz * (size - 1));
-                n_pickpoints = NX * NY * nz;
+                n_pickpoints = nx * ny * nz;
         } else{
                 nz = (NZ / size) + 1;
-                n_pickpoints = nz * NX * NY;
+                n_pickpoints = nz * nx * ny;
         }
 
         printf("[%i] Will be reading %i pickpoints out of %i.\n", rank, n_pickpoints, total_pickpoints);
         printf("[%i] lowerbound: %i\n", rank, lowerbound);
 #else
         nz = NZ;
-        n_pickpoints = nz*NX*NY;
+        n_pickpoints = nz*nx*ny;
 #endif
         float pts[n_pickpoints * 3];
         int i, counter;
         i = 0;
         counter = 0;
+	printf("%d %d %d %d\n", total_pickpoints, lowerbound, n_pickpoints,nz);
         for(counter = 0; counter < total_pickpoints && (fgets( buff, sizeof buff, fp_pickpoints ) != NULL); counter ++){
 //              if ( !sscanf( buff, "%f %f %f", &pts[i], &pts[i++], &pts[i++] ) == 3 ) {
                 if(counter >= lowerbound && counter < lowerbound + n_pickpoints){
@@ -328,7 +344,7 @@ int main(int argc, char *argv[]){
 	FILE *fp_input;
 	for(i=0; i < n_pickpoints; i++) {
 		//printf("[%i] skipping for file %i - \n", rank, i);
-		fp_input = fopen(inputs_files[i], "r");
+		fp_input = fopen(build_string(root_folder, inputs_files[i]), "r");
 		if (fp_input == NULL) {
 			printf("[%i] File was null %s!", rank,  inputs_files[i]);
 #ifdef PAR
@@ -358,9 +374,8 @@ int main(int argc, char *argv[]){
 	
 	j=0;
 	char outputFileName[100];
-	//float data[n_pickpoints][3], nodal_scalar_data[nz][NY][NX], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
-	float data[n_pickpoints][3], u[nz][NY][NX], v[nz][NY][NX], w[nz][NY][NX], uvw[nz][NY][NX][3], times[n_pickpoints];
-	int dims[] = {NX, NY, nz};
+	float data[n_pickpoints][3], u[nz][ny][nx], v[nz][ny][nx], w[nz][ny][nx], uvw[nz][ny][nx][3], times[n_pickpoints];
+	int dims[] = {nx, ny, nz};
 	int nvars = 3, x=0, y=0, z=0;
 	int vardims[] = {1, 1, 1 };
 	int centering[] = {1, 1, 1};
@@ -378,14 +393,14 @@ int main(int argc, char *argv[]){
 		
 		for (i=0; i<n_pickpoints; i++){
 			//printf("[%i] i = %i reading from file: \n", rank, i, inputs_files[i]);
-			fp_input = fopen(inputs_files[i], "r");
+			fp_input = fopen(build_string(root_folder,inputs_files[i]), "r");
 			if (fp_input == NULL){
 				printf("[%i] Unable to open file %s\n", rank, inputs_files[i]);
 			}
 			fseek(fp_input, inputs_offsets[i], SEEK_SET);
 			if (fgets(buff, sizeof buff, fp_input) == NULL){
 				finished = 1;
-				printf("[%i] Finisde and exiting loop\n", i);
+				printf("[%i] Finished and exiting loop\n", i);
 				fclose(fp_input);
 				break;
 			}
@@ -420,11 +435,11 @@ int main(int argc, char *argv[]){
 			if (w[z][y][x] > max_w) max_w = w[z][y][x];
 			if (w[z][y][x] < min_w) min_w = w[z][y][x];
 			
-			if((++y % NY) == 0){
+			if((++y % ny) == 0){
 				x++;
 				y=0;
 			}
-			if (x == NX) {
+			if (x == nx) {
 				z++;
 				x = 0;
 			}
@@ -434,9 +449,9 @@ int main(int argc, char *argv[]){
 		/* Pass the mesh and data to visit_writer. */
 		if (!finished){
 			//printf("I'm in the if statement\n");
-			sprintf(outputFileName, "../avizo/step.%08d.am", j);
+			sprintf(outputFileName, "%s/%s/step.%08d.am", root_folder, output_folder, j);
 			//printf("Will be saving to %s\n", outputFileName );
-			//printf("%i %i %i\n", NX, NY, nz);
+			//printf("%i %i %i\n", nx, ny, nz);
 			write_curvilinear_mesh(outputFileName, 1, dims, domain_extents, (float*)pts, nvars, vardims, centering, varnames, vars);
 		}
 		/*MPI_Barrier(MPI_COMM_WORLD);
