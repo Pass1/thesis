@@ -210,7 +210,7 @@ int main(int argc, char *argv[]){
 	int lowerbound=0;
 	double max_x, max_y, max_z, min_x, min_y, min_z;
 	char *root_folder = "";
-	char *output_folder = "../amira/";
+	char *output_folder = "../amiramesh/";
 	if (argc == 2) { root_folder = argv[1]; }
 	
 	/*rlp.rlim_cur = 16000;
