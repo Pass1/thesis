@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
         int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
         int lowerbound=0;
 	char *root_folder = "";
-        char *output_folder = "../vis2/";
+        char *output_folder = "../vtks/";
         if (argc == 2) { root_folder = argv[1]; }
 
 	//Open the pickpoints file
