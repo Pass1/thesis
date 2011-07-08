@@ -10,7 +10,7 @@ fi
 i=0
 while [[ -e $1/`printf "frame%04d.png" $i` ]]; do
         echo "Doing $i"
-        echo "python tiling.py $1/`printf "frame%04d.png " $i` $2 $3"
+        #echo "python tiling.py $1/`printf "frame%04d.png " $i` $2 $3"
         python tiling.py $1/`printf "frame%04d.png " $i` $2 $3
         let i++
 done

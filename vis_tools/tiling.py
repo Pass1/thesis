@@ -25,7 +25,6 @@ def split_on_screens(filename, rows, cols, width, height):
             im_crop.save(output_dir + base + "_00" + str(j) + "_00" + str(i) + ext)
 
 if __name__ == "__main__":
-    print len(sys.argv), "\n"
     if (len(sys.argv)==4):
         split_on_screens(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), 1360, 768)
     else:
