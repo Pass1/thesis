@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
 	int NZ; //NZ is the total number of layers, read from the pickpoints file.
 	int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
 	int lowerbound=0;
-	char *root_folder = "";
+	char *root_folder = ".";
 	char *output_folder = "../vtks/"; 
 	if (argc == 2) { root_folder = argv[1]; }
 
@@ -72,8 +72,8 @@ int main(int argc, char *argv[]){
 	//create the output folder
 	mkdir(build_string(root_folder,output_folder), S_IRWXU | S_IRWXG | S_IRWXO);
 
-	rlp.rlim_cur = 16220;
-	rlp.rlim_max = 16220;
+	rlp.rlim_cur = total_pickpoints+20;
+	rlp.rlim_max = total_pickpoints+20;
 
 	//set the number of open file desriptors to MAX_CONNECTIONS
 	if (setrlimit (RLIMIT_NOFILE,&rlp) == -1) {
@@ -154,9 +154,9 @@ int main(int argc, char *argv[]){
 			if (fp_inputs[i] == NULL) {
 				printf("[%i] Unable to open file %s in slot %i.\nExiting.\n", rank, buff, i);
 				return(1);
-			}/* else {
+			} else {
 				printf("Opened %s in slot %i.\n", buff, i);
-			}*/
+			}
 			i++;
 		}
 	}	

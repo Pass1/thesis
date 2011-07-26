@@ -93,10 +93,10 @@ int main(int argc, char *argv[]){
 		for (y = min_y; y <= max_y; y+= distance_y){
 			nx = 0;
 			for (x = min_x; x <= max_x; x+= distance_x){
-				if (z!=0.0) {
+				if (z!=max_z) {
 					printf("%f %f %f\n", x, y, z);
 				} else {
-					printf("%f %f -0.1\n", x, y);
+					printf("%f %f %f\n", x, y, z-0.1);
 				}
 				i++;
 				nx++;

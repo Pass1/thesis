@@ -134,7 +134,8 @@ void write_curvilinear_mesh(const char *filename, int ub, int *dims, double *dom
     write_string("Parameters {\n");
     //write_string("\tExpression \"[ Ax , Ay, Az ]\",\n");
     //write_string("\tBoundingBox -16000 2000 -16000 2000 0 0,\n");
-    sprintf(str, "\tBoundingBox %d %d %d %d %d %d,\n", domain_extents[0], domain_extents[1], domain_extents[2], domain_extents[3], domain_extents[4], domain_extents[5]);
+    
+    sprintf(str, "\tBoundingBox %f %f %f %f %f %f,\n", domain_extents[0], domain_extents[1], domain_extents[2], domain_extents[3], domain_extents[4], domain_extents[5]);
     write_string(str);
     write_string("\tCoordType \"uniform\"\n");
     write_string("}\n\n");
@@ -209,7 +210,7 @@ int main(int argc, char *argv[]){
 	int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
 	int lowerbound=0;
 	double max_x, max_y, max_z, min_x, min_y, min_z;
-	char *root_folder = "";
+	char *root_folder = ".";
 	char *output_folder = "../amiramesh/";
 	if (argc == 2) { root_folder = argv[1]; }
 	

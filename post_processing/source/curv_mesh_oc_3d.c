@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
         int NZ; //NZ is the total number of layers, read from the pickpoints file.
         int nx, ny, nz=0; //nz is the number of layers assigned to a particular processor.
         int lowerbound=0;
-	char *root_folder = "";
+	char *root_folder = ".";
         char *output_folder = "../vtks/";
         if (argc == 2) { root_folder = argv[1]; }
 
